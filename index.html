@@ -104,6 +104,17 @@ input[type=text]:focus{border-color:var(--acc-bd);background:#ffffff0d}
 .drop b{display:block;font-size:14px;margin-bottom:4px}
 .drop span{font-size:12px;color:var(--t3)}
 .hint{font-size:12px;color:var(--t3);margin-top:9px;line-height:1.45}
+
+/* команды: кнопка = логотип + название */
+.teams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.tm{display:flex;align-items:center;gap:10px;min-width:0;border:1px solid var(--line);
+  background:#ffffff08;color:var(--t2);border-radius:var(--r-md);padding:7px 10px;
+  font-family:inherit;font-size:13px;font-weight:700;text-align:left;cursor:pointer;
+  transition:all .15s var(--ease)}
+.tm img{width:30px;height:30px;flex:none;border-radius:8px;object-fit:cover;display:block}
+.tm span{min-width:0;line-height:1.2;overflow-wrap:anywhere}   /* на узком экране «Pulse Community» переносится, а не обрезается */
+.tm:hover{border-color:var(--acc-bd);color:var(--t1)}
+.tm[aria-pressed="true"]{border-color:var(--acc);background:var(--acc-dim);color:var(--t1)}
 .hint.warn{color:var(--acc-br)}
 
 .presets{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
@@ -137,6 +148,7 @@ a.btn.wait{opacity:.55;pointer-events:none}
 .result{width:100%;max-width:560px;margin-top:6px;padding:18px;border-radius:var(--r-lg);
   background:var(--acc-dim);border:1px solid var(--acc-bd);display:flex;
   flex-direction:column;gap:12px;align-items:center;text-align:center}
+.result[hidden]{display:none}   /* без этого display:flex перебивал hidden и пустой блок «Готово» висел сразу */
 .result .kick{color:var(--acc)}
 .result img{width:100%;border-radius:var(--r-sm);display:block}
 .rHint{font-size:14px;color:var(--t2);line-height:1.45}
@@ -192,7 +204,13 @@ a.btn.wait{opacity:.55;pointer-events:none}
     </div>
 
     <div class="block">
-      <div class="kick">4 · Фотография</div>
+      <div class="kick">4 · Команда</div>
+      <div class="teams" id="teams"></div>
+      <div class="hint">Не в команде — оставь Pulse Community: внизу будет только Pulse Platform.</div>
+    </div>
+
+    <div class="block">
+      <div class="kick">5 · Фотография</div>
       <div class="drop" id="drop">
         <b>Перетащи фото или нажми</b>
         <span>JPG, PNG · по грудь или в полный рост</span>
@@ -208,7 +226,7 @@ a.btn.wait{opacity:.55;pointer-events:none}
     </div>
 
     <div class="block">
-      <div class="kick">5 · Посадка фигуры</div>
+      <div class="kick">6 · Посадка фигуры</div>
       <div class="presets" id="presets">
         <button type="button" data-p="center">По центру</button>
         <button type="button" data-p="close">Крупный план</button>
@@ -246,7 +264,7 @@ a.btn.wait{opacity:.55;pointer-events:none}
   <div class="cards">
     <div class="c"><em>Шаг 1</em><b>Выбери свой статус</b><p>Кнопки от 1 до 15. Фон и оформление подставятся сами — чем выше ступень, тем сильнее кадр.</p></div>
     <div class="c"><em>Шаг 2</em><b>Загрузи фотографию</b><p>Портрет по грудь или в полный рост. Фон уберётся автоматически — снимай хоть дома, хоть на сцене.</p></div>
-    <div class="c"><em>Шаг 3</em><b>Впиши имя и фамилию</b><p>Русский или английский — переключается одной кнопкой. Готовые посадки помогут поставить фигуру ровно.</p></div>
+    <div class="c"><em>Шаг 3</em><b>Впиши имя и выбери команду</b><p>Русский или английский — переключается одной кнопкой. Логотип команды встанет в подпись рядом с Pulse Platform. Готовые посадки помогут поставить фигуру ровно.</p></div>
     <div class="c"><em>Шаг 4</em><b>Скачай и выкладывай</b><p>Файл сразу нужного размера для сторис и постов. Печатать тоже можно.</p></div>
   </div>
   <p class="note">Не получилось убрать фон — убери его в телефоне и включи «Уже без фона». Остальное конструктор сделает сам.</p>
@@ -297,7 +315,13 @@ function fillTracked(x,txt,cx,y,track,align){
   x.textAlign=prev;
 }
 
-const S={lvl:1,lang:"ru",name:"Дмитрий Кабанов",zoom:1,offy:0,offx:0,tol:46,cutMode:"auto"};
+/* команды — из «Брендинг команд.pdf» (04.11.2026). Pulse Community = все, кто не в команде:
+   подвал как раньше, только Pulse Platform. Название пишется ровно так. */
+const TEAMS=[
+ {id:"pulse-community",name:"Pulse Community",solo:true},
+ {id:"pr1me",name:"Pr1me"},{id:"seven-lab",name:"Seven Lab"},{id:"origin-one",name:"Origin One"},
+ {id:"stars",name:"Stars"},{id:"mega-team",name:"MEGA TEAM"},{id:"alfa",name:"Alfa"},{id:"kin",name:"KIN"}];
+const S={lvl:1,lang:"ru",name:"Дмитрий Кабанов",team:"pulse-community",zoom:1,offy:0,offx:0,tol:46,cutMode:"auto"};
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
 const st=document.getElementById("st");
 const plates={}; let mark=null, figure=null, rawFile=null;
@@ -306,6 +330,20 @@ const say=(t)=>{st.textContent=t};
 
 function load(src){return new Promise((res,rej)=>{const i=new Image();
   i.crossOrigin="anonymous"; i.onload=()=>res(i); i.onerror=rej; i.src=src;});}
+
+const teamImgs={};
+async function teamLogo(id){
+  const t=TEAMS.find(x=>x.id===id);
+  if(!t||t.solo) return null;
+  if(!(id in teamImgs)){
+    try{ teamImgs[id]=await load(`assets/teams/${id}.png`); }
+    catch(e){ teamImgs[id]=null; say("логотип команды не загрузился — подпись без него"); }
+  }
+  return teamImgs[id];}
+
+function rrect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 
 async function plate(n){const k="p"+String(n).padStart(2,"0");
   if(!plates[k]){
@@ -475,7 +513,7 @@ async function draw(){
   ctx.fillStyle="#0A0A0B"; ctx.fillRect(0,0,W,H);
 
   /* фон, cover */
-  const pl=await plate(S.lvl);
+  const [pl,tl]=await Promise.all([plate(S.lvl), teamLogo(S.team)]);
   if(my!==drawSeq) return;   /* пользователь успел переключить статус */
   if(pl){ const sc=Math.max(W/pl.width,H/pl.height);
     ctx.drawImage(pl,(W-pl.width*sc)/2,(H-pl.height*sc)/2,pl.width*sc,pl.height*sc); }
@@ -521,15 +559,51 @@ async function draw(){
   ctx.fillStyle=g; ctx.fillRect(PAD,RULE_Y,W-PAD*2,1);
 
   /* подвал */
-  const SITE="Pulse Platform", GAP=32;
-  ctx.font=`700 ${SITE_PX}px "Manrope", sans-serif`;
-  ctx.letterSpacing=`${-0.005*SITE_PX}px`;
-  const sw=ctx.measureText(SITE).width;
-  const total=MARK+GAP+sw, x0=(W-total)/2;      /* блок строго по центру кадра */
-  if(mark) ctx.drawImage(mark,x0,FOOT_Y,MARK,MARK);
-  ctx.fillStyle=T3; ctx.textAlign="left";
-  ctx.fillText(SITE, x0+MARK+GAP, SITE_BASE);
-  ctx.letterSpacing="0px";
+  const SITE="Pulse Platform";
+  const team=TEAMS.find(x=>x.id===S.team);
+  ctx.textAlign="left";
+  if(!team || team.solo || !tl){
+    /* без команды — утверждённый подвал: знак 124 + «Pulse Platform» 42 */
+    const GAP=32;
+    ctx.font=`700 ${SITE_PX}px "Manrope", sans-serif`;
+    ctx.letterSpacing=`${-0.005*SITE_PX}px`;
+    const sw=ctx.measureText(SITE).width;
+    const total=MARK+GAP+sw, x0=(W-total)/2;      /* блок строго по центру кадра */
+    if(mark) ctx.drawImage(mark,x0,FOOT_Y,MARK,MARK);
+    ctx.fillStyle=T3;
+    ctx.fillText(SITE, x0+MARK+GAP, SITE_BASE);
+    ctx.letterSpacing="0px";
+  } else {
+    /* с командой: [знак] Pulse Platform × [логотип] Команда — как утверждённая проба card-team.html */
+    const MK=104, FS=38, G=24, XFS=40, XM=10, R=26, CY=FOOT_Y+62, top=CY-MK/2;
+    ctx.font=`700 ${FS}px "Manrope", sans-serif`; ctx.letterSpacing=`${-0.005*FS}px`;
+    const sw=ctx.measureText(SITE).width, nw=ctx.measureText(team.name).width;
+    ctx.letterSpacing="0px";
+    ctx.font=`500 ${XFS}px "Manrope", sans-serif`;
+    const xw=ctx.measureText("×").width;
+    const total=MK+G+sw+G+XM+xw+XM+G+MK+G+nw;
+    let x=(W-total)/2;
+    if(mark) ctx.drawImage(mark,x,top,MK,MK);
+    x+=MK+G;
+    ctx.font=`700 ${FS}px "Manrope", sans-serif`; ctx.letterSpacing=`${-0.005*FS}px`;
+    ctx.fillStyle=T3; ctx.fillText(SITE,x,CY+FS*.357);
+    ctx.letterSpacing="0px";
+    x+=sw+G+XM;
+    ctx.font=`500 ${XFS}px "Manrope", sans-serif`;
+    ctx.fillStyle="rgba(240,240,245,.42)"; ctx.fillText("×",x,CY+XFS*.357);
+    x+=xw+XM+G;
+    /* логотип: тень, скругление 26, тонкий светлый кант */
+    ctx.save(); rrect(x,top,MK,MK,R);
+    ctx.shadowColor="rgba(0,0,0,.55)"; ctx.shadowBlur=30; ctx.shadowOffsetY=10;
+    ctx.fillStyle="#0b0b0d"; ctx.fill(); ctx.restore();
+    ctx.save(); rrect(x,top,MK,MK,R); ctx.clip(); ctx.drawImage(tl,x,top,MK,MK); ctx.restore();
+    ctx.save(); rrect(x-.75,top-.75,MK+1.5,MK+1.5,R+.75);
+    ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,.16)"; ctx.stroke(); ctx.restore();
+    x+=MK+G;
+    ctx.font=`700 ${FS}px "Manrope", sans-serif`; ctx.letterSpacing=`${-0.005*FS}px`;
+    ctx.fillStyle=T3; ctx.fillText(team.name,x,CY+FS*.357);
+    ctx.letterSpacing="0px";
+  }
 
   if(typeof armDownload==="function") armDownload();
 }
@@ -543,6 +617,18 @@ L.forEach((v,i)=>{const b=document.createElement("button");
     [...lvBox.children].forEach((c,j)=>c.setAttribute("aria-pressed",j===i?"true":"false"));
     document.getElementById("lvName").textContent=L[i][S.lang]; draw();};
   lvBox.appendChild(b);});
+
+const tmBox=document.getElementById("teams");
+TEAMS.forEach(t=>{const b=document.createElement("button");
+  b.className="tm"; b.type="button"; b.dataset.t=t.id;
+  b.setAttribute("aria-pressed", t.id===S.team?"true":"false");
+  const im=document.createElement("img"); im.src=`assets/teams/${t.id}.png`; im.alt="";
+  const sp=document.createElement("span"); sp.textContent=t.name;
+  b.append(im,sp);
+  b.onclick=()=>{S.team=t.id;
+    [...tmBox.children].forEach(c=>c.setAttribute("aria-pressed",c===b?"true":"false"));
+    draw();};
+  tmBox.appendChild(b);});
 
 document.getElementById("lang").onclick=e=>{const b=e.target.closest("button"); if(!b)return;
   S.lang=b.dataset.l;
@@ -646,7 +732,8 @@ const dlEl=document.getElementById("dl");
 
 function fileName(){
   const nm=(L[S.lvl-1].en||"").replace(/[^A-Za-z0-9]+/g,"-").toLowerCase();
-  return `pulse-${String(S.lvl).padStart(2,"0")}-${nm}.png`;
+  const t=TEAMS.find(x=>x.id===S.team), tm=(t&&!t.solo)?"-"+t.id:"";
+  return `pulse-${String(S.lvl).padStart(2,"0")}-${nm}${tm}.png`;
 }
 
 /* Ссылку готовим ЗАРАНЕЕ. Тогда нажатие — обычный клик по <a download>,
@@ -721,6 +808,7 @@ dlEl.addEventListener("click", async (e)=>{
   try{ await document.fonts.load(`900 ${TITLE_PX}px "Alumni Sans"`);
        await document.fonts.load(`800 ${NAME_PX}px "Manrope"`);
        await document.fonts.load(`700 ${SITE_PX}px "Manrope"`);
+       await document.fonts.load(`500 40px "Manrope"`);   /* знак «×» в подписи команды */
        await document.fonts.ready; }catch(e){}
   const fontsOk = document.fonts && document.fonts.check(`900 ${TITLE_PX}px "Alumni Sans"`);
   try{ mark=await load("assets/mark.png"); }catch(e){ mark=null; }
